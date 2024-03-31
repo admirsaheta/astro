@@ -1,4 +1,11 @@
-import type { OutgoingHttpHeaders } from 'node:http';
+import { type OutgoingHttpHeaders } from 'node:http';
+
+interface WebAPIHeaders {
+	entries(): IterableIterator<[string, string]>;
+	has(name: string): boolean;
+	get(name: string): string | null;
+	getSetCookie(): string[];
+}
 
 /**
  * Takes in a nullable WebAPI Headers object and produces a NodeJS OutgoingHttpHeaders object suitable for usage
@@ -8,13 +15,13 @@ import type { OutgoingHttpHeaders } from 'node:http';
  * @returns {OutgoingHttpHeaders} NodeJS OutgoingHttpHeaders object with multiple set-cookie handled as an array of values
  */
 export const createOutgoingHttpHeaders = (
-	headers: Headers | undefined | null
+	headers: WebAPIHeaders | undefined | null
 ): OutgoingHttpHeaders | undefined => {
 	if (!headers) {
 		return undefined;
 	}
 
-	// at this point, a multi-value'd set-cookie header is invalid (it was concatenated as a single CSV, which is not valid for set-cookie)
+	// Convert WebAPI Headers to NodeJS OutgoingHttpHeaders
 	const nodeHeaders: OutgoingHttpHeaders = Object.fromEntries(headers.entries());
 
 	if (Object.keys(nodeHeaders).length === 0) {
