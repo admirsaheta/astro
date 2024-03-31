@@ -32,17 +32,25 @@ export async function compile({
 	filename,
 	source,
 }: CompileProps): Promise<CompileResult> {
+	// Because `@astrojs/compiler` can't return the dependencies for each style transformed,
+	// we need to use an external array to track the dependencies whenever preprocessing is called,
+	// and we'll rebuild the final `css` result after transformation.
 	const cssPartialCompileResults: PartialCompileCssResult[] = [];
 	const cssTransformErrors: AstroError[] = [];
 	let transformResult: TransformResult;
 
 	try {
+		// Transform from `.astro` to valid `.ts`
+		// use `sourcemap: "both"` so that sourcemap is included in the code
+		// result passed to esbuild, but also available in the catch handler.
 		transformResult = await transform(source, {
 			compact: astroConfig.compressHTML,
 			filename,
-			normalizedFilename: normalizeFilename(filename, new URL(astroConfig.root)),
+			normalizedFilename: normalizeFilename(filename, astroConfig.root),
 			sourcemap: 'both',
 			internalURL: 'astro/compiler-runtime',
+			// TODO: this is no longer neccessary for `Astro.site`
+			// but it somehow allows working around caching issues in content collections for some tests
 			astroGlobalArgs: JSON.stringify(astroConfig.site),
 			scopedStyleStrategy: astroConfig.scopedStyleStrategy,
 			resultScopedSlot: true,
